@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Script from "next/script";
 
 const PYEONG = 3.3058;
 
@@ -29,16 +30,16 @@ export default function Home() {
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!address.trim()) return;
+  async function performSearch(rawAddress) {
+    const target = rawAddress.trim();
+    if (!target) return;
 
     setLoading(true);
     setError(null);
     setResult(null);
 
     try {
-      const res = await fetch(`/api/analyze?address=${encodeURIComponent(address.trim())}`);
+      const res = await fetch(`/api/analyze?address=${encodeURIComponent(target)}`);
       const data = await res.json();
 
       if (!res.ok) {
@@ -53,10 +54,36 @@ export default function Home() {
     }
   }
 
+  function handleSubmit(e) {
+    e.preventDefault();
+    performSearch(address);
+  }
+
+  // 다음(카카오) 우편번호 서비스 팝업 - 주소를 정확히 몰라도 검색해서 목록에서 고를 수 있게 해줌
+  function openAddressSearch() {
+    if (!window.daum || !window.daum.Postcode) {
+      setError("주소 검색 팝업을 불러오는 중입니다. 잠시 후 다시 눌러주세요.");
+      return;
+    }
+
+    new window.daum.Postcode({
+      oncomplete: function (data) {
+        const picked = data.roadAddress || data.jibunAddress || data.address;
+        setAddress(picked);
+        performSearch(picked); // 선택하자마자 바로 조회까지 실행
+      },
+    }).open();
+  }
+
   return (
     <div className="wrap">
       <h1>우리집 분석기</h1>
       <p className="subtitle">주소를 입력하면 대지면적·건물면적·최근 실거래가를 보여드립니다</p>
+
+      <Script
+        src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
+        strategy="afterInteractive"
+      />
 
       <form onSubmit={handleSubmit} className="form">
         <input
@@ -65,6 +92,9 @@ export default function Home() {
           onChange={(e) => setAddress(e.target.value)}
           placeholder="예: 인천 서구 청라동 123 또는 도로명주소"
         />
+        <button type="button" className="secondary" onClick={openAddressSearch}>
+          주소 찾기
+        </button>
         <button type="submit" disabled={loading}>
           {loading ? "조회 중..." : "조회하기"}
         </button>
@@ -227,6 +257,11 @@ export default function Home() {
         button:disabled {
           background: #999;
           cursor: default;
+        }
+        button.secondary {
+          background: #fff;
+          color: #2b2b2b;
+          border: 1px solid #2b2b2b;
         }
         .error {
           background: #fdecea;
