@@ -127,7 +127,19 @@ export default function Home() {
             {result.building && result.building.error && (
               <div className="notice">건축물대장 조회 실패: {result.building.error}</div>
             )}
-            {result.building && !result.building.error && (
+            {result.building && result.building.notFound && (
+              <div className="notice">
+                건축물대장 정보를 찾지 못했습니다.
+                <br />
+                조회에 사용한 코드 — 시군구: {result.building.queried.sigunguCd} / 법정동:{" "}
+                {result.building.queried.bjdongCd} / 본번: {result.building.queried.bun} / 부번:{" "}
+                {result.building.queried.ji}
+                <br />
+                (이 코드가 정부24 건축물대장 열람 결과와 다르면 지번 매칭 오류, 같은데도 안 나오면
+                해당 건물의 데이터가 세움터에 등록되지 않은 경우입니다)
+              </div>
+            )}
+            {result.building && !result.building.error && !result.building.notFound && (
               <table>
                 <tbody>
                   <tr>
@@ -166,9 +178,6 @@ export default function Home() {
                   </tr>
                 </tbody>
               </table>
-            )}
-            {result.building === null && (
-              <div className="notice">건축물대장 정보를 찾지 못했습니다.</div>
             )}
           </section>
 
