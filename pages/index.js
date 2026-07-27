@@ -135,8 +135,21 @@ export default function Home() {
                 {result.building.queried.bjdongCd} / 본번: {result.building.queried.bun} / 부번:{" "}
                 {result.building.queried.ji}
                 <br />
-                (이 코드가 정부24 건축물대장 열람 결과와 다르면 지번 매칭 오류, 같은데도 안 나오면
-                해당 건물의 데이터가 세움터에 등록되지 않은 경우입니다)
+                (지번은 정확히 매칭되었으나 결과가 없다면, 세움터에 아직 전산 등록되지 않은
+                건물일 가능성이 높습니다)
+                <br />
+                <a
+                  href="https://www.gov.kr/mw/AA020InfoCappView.do?CappBizCD=15000000098"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  정부24에서 직접 열람해보기 →
+                </a>{" "}
+                또는{" "}
+                <a href="https://www.eais.go.kr" target="_blank" rel="noreferrer">
+                  세움터
+                </a>
+                에서도 확인 가능합니다.
               </div>
             )}
             {result.building && !result.building.error && !result.building.notFound && (
