@@ -14,18 +14,23 @@ export default async function handler(req, res) {
     // 1단계: 주소 -> 좌표 + 법정동코드 + 지번
     const geo = await geocodeAddress(address.trim());
 
-    // 2단계, 3단계, 입지점수는 서로 의존하지 않으므로 동시에 요청해서 속도를 아낍니다.
-    const [building, realestate, locationScore] = await Promise.all([
-      getBuildingInfo({
-        sigunguCd: geo.sigunguCd,
-        bjdongCd: geo.bjdongCd,
-        bun: geo.bun,
-        ji: geo.ji,
-      }).catch((err) => ({ error: err.message })),
+    // 1.5단계: 건물명은 실거래가 매칭(지번이 안 맞을 때 대안)에 쓰이므로 먼저 조회
+    const building = await getBuildingInfo({
+      sigunguCd: geo.sigunguCd,
+      bjdongCd: geo.bjdongCd,
+      bun: geo.bun,
+      ji: geo.ji,
+    }).catch((err) => ({ error: err.message }));
+
+    const buildingName = building && !building.error && !building.notFound ? building.buildingName : null;
+
+    // 2단계, 입지점수는 서로 의존하지 않으므로 동시에 요청해서 속도를 아낍니다.
+    const [realestate, locationScore] = await Promise.all([
       getRecentTransactions({
         sigunguCd: geo.sigunguCd,
         bun: geo.bun,
         ji: geo.ji,
+        buildingName,
         months: 6,
       }).catch((err) => ({ error: err.message })),
       calculateLocationScore({
