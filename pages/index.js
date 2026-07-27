@@ -29,6 +29,9 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+  const [trendLoading, setTrendLoading] = useState(false);
+  const [trendError, setTrendError] = useState(null);
+  const [trendData, setTrendData] = useState(null);
 
   async function performSearch(rawAddress) {
     const target = rawAddress.trim();
@@ -37,6 +40,8 @@ export default function Home() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setTrendData(null);
+    setTrendError(null);
 
     try {
       const res = await fetch(`/api/analyze?address=${encodeURIComponent(target)}`);
@@ -57,6 +62,27 @@ export default function Home() {
   function handleSubmit(e) {
     e.preventDefault();
     performSearch(address);
+  }
+
+  async function loadTrend() {
+    if (!result?.geo) return;
+    setTrendLoading(true);
+    setTrendError(null);
+    try {
+      const params = new URLSearchParams({
+        sigunguCd: result.geo.sigunguCd,
+        bun: result.geo.bun,
+        ji: result.geo.ji,
+      });
+      const res = await fetch(`/api/priceTrend?${params.toString()}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "추이 조회 중 오류가 발생했습니다.");
+      setTrendData(data);
+    } catch (err) {
+      setTrendError(err.message);
+    } finally {
+      setTrendLoading(false);
+    }
   }
 
   // 다음(카카오) 우편번호 서비스 팝업 - 주소를 정확히 몰라도 검색해서 목록에서 고를 수 있게 해줌
@@ -294,6 +320,39 @@ export default function Home() {
               </table>
             )}
           </section>
+
+          <section>
+            <h2>5년치 시세 추이</h2>
+            {!trendData && (
+              <button type="button" className="secondary" onClick={loadTrend} disabled={trendLoading}>
+                {trendLoading ? "불러오는 중... (최대 1분 정도 걸릴 수 있어요)" : "5년 추이 보기"}
+              </button>
+            )}
+            {trendError && <div className="notice">추이 조회 실패: {trendError}</div>}
+            {trendData && trendData.yearly.length === 0 && (
+              <div className="notice">최근 5년간 이 지번과 일치하는 아파트 거래가 없습니다.</div>
+            )}
+            {trendData && trendData.yearly.length > 0 && (
+              <>
+                <div className="chart">
+                  {trendData.yearly.map((y) => {
+                    const max = Math.max(...trendData.yearly.map((v) => v.avgPricePerPyeong));
+                    const heightPct = Math.max(4, Math.round((y.avgPricePerPyeong / max) * 100));
+                    return (
+                      <div className="chartCol" key={y.year}>
+                        <div className="chartValue">{fmtWon(y.avgPricePerPyeong)}</div>
+                        <div className="chartBar" style={{ height: `${heightPct}%` }} />
+                        <div className="chartLabel">
+                          {y.year} ({y.count}건)
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="notice">평당가(3.3㎡ 기준) 연도별 평균입니다. 거래건수가 적은 해는 참고용으로만 봐주세요.</p>
+              </>
+            )}
+          </section>
         </div>
       )}
 
@@ -419,6 +478,40 @@ export default function Home() {
         .detailCell {
           color: #777;
           font-size: 12px;
+        }
+        .chart {
+          display: flex;
+          align-items: flex-end;
+          gap: 12px;
+          height: 180px;
+          padding: 12px 8px 0;
+          border-bottom: 2px solid #2b2b2b;
+        }
+        .chartCol {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: flex-end;
+          height: 100%;
+        }
+        .chartValue {
+          font-size: 11px;
+          color: #555;
+          margin-bottom: 4px;
+          white-space: nowrap;
+        }
+        .chartBar {
+          width: 100%;
+          max-width: 48px;
+          background: #2b2b2b;
+          border-radius: 4px 4px 0 0;
+        }
+        .chartLabel {
+          font-size: 11px;
+          color: #777;
+          margin-top: 6px;
+          text-align: center;
         }
       `}</style>
     </div>
