@@ -9,6 +9,9 @@ export default async function handler(req, res) {
 
   try {
     const history = await getYearlyPriceHistory({ sigunguCd, bun, ji, buildingName, years: 5 });
+    if (history.error) {
+      return res.status(502).json({ error: history.error });
+    }
     return res.status(200).json(history);
   } catch (err) {
     return res.status(500).json({ error: err.message || "알 수 없는 오류가 발생했습니다." });
