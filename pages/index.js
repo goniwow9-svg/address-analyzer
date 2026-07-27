@@ -182,6 +182,66 @@ export default function Home() {
           </section>
 
           <section>
+            <h2>입지점수</h2>
+            {result.locationScore && result.locationScore.error && (
+              <div className="notice">입지점수 계산 실패: {result.locationScore.error}</div>
+            )}
+            {result.locationScore && !result.locationScore.error && (
+              <>
+                <div className="scoreSummary">
+                  <span className="grade">{result.locationScore.grade}</span>
+                  <div>
+                    <div className="scoreNum">
+                      {result.locationScore.totalRaw} / {result.locationScore.totalMax}점 (
+                      {result.locationScore.percentage}%)
+                    </div>
+                    <div className="comment">"{result.locationScore.comment}"</div>
+                  </div>
+                </div>
+
+                <table>
+                  <thead>
+                    <tr>
+                      <th>카테고리</th>
+                      <th>점수</th>
+                      <th>세부 근거</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(result.locationScore.categories).map(([name, cat]) => (
+                      <tr key={name}>
+                        <td>{name}</td>
+                        <td>
+                          {cat.score} / {cat.max}
+                        </td>
+                        <td className="detailCell">
+                          {cat.details.map((d, i) => (
+                            <div key={i}>{d}</div>
+                          ))}
+                        </td>
+                      </tr>
+                    ))}
+                    <tr>
+                      <td>감점</td>
+                      <td>{result.locationScore.deduction.score}</td>
+                      <td className="detailCell">
+                        {result.locationScore.deduction.details.length === 0
+                          ? "해당 없음"
+                          : result.locationScore.deduction.details.map((d, i) => <div key={i}>{d}</div>)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div className="notice" style={{ marginTop: "8px" }}>
+                  아직 준비 중: {result.locationScore.pendingCategories.join(", ")} — 다음 업데이트에서
+                  추가됩니다. (현재 {result.locationScore.totalMax}점 만점 기준 점수입니다)
+                </div>
+              </>
+            )}
+          </section>
+
+          <section>
             <h2>최근 실거래가 (최근 {result.realestate.monthsSearched}개월)</h2>
             {result.realestate.error && (
               <div className="notice">실거래가 조회 실패: {result.realestate.error}</div>
@@ -314,6 +374,38 @@ export default function Home() {
         }
         thead th {
           background: #ebe8e1;
+        }
+        .scoreSummary {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-bottom: 14px;
+        }
+        .grade {
+          font-size: 36px;
+          font-weight: 800;
+          width: 60px;
+          height: 60px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #2b2b2b;
+          color: #fff;
+          border-radius: 50%;
+          flex-shrink: 0;
+        }
+        .scoreNum {
+          font-size: 16px;
+          font-weight: 600;
+        }
+        .comment {
+          color: #666;
+          font-size: 13px;
+          margin-top: 2px;
+        }
+        .detailCell {
+          color: #777;
+          font-size: 12px;
         }
       `}</style>
     </div>
