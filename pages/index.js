@@ -74,6 +74,9 @@ export default function Home() {
         bun: result.geo.bun,
         ji: result.geo.ji,
       });
+      if (result.building && !result.building.error && !result.building.notFound) {
+        params.set("buildingName", result.building.buildingName || "");
+      }
       const res = await fetch(`/api/priceTrend?${params.toString()}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "추이 조회 중 오류가 발생했습니다.");
@@ -292,7 +295,13 @@ export default function Home() {
               </div>
             )}
             {!result.realestate.error && result.realestate.matchedCount > 0 && (
-              <table>
+              <>
+                <p className="notice">
+                  매칭 방식: {result.realestate.transactions[0].matchMethod === "건물명"
+                    ? "지번이 정확히 안 맞아 건물명으로 매칭했습니다 (참고용)"
+                    : "지번 매칭"}
+                </p>
+                <table>
                 <thead>
                   <tr>
                     <th>계약일</th>
@@ -318,11 +327,12 @@ export default function Home() {
                   ))}
                 </tbody>
               </table>
+              </>
             )}
           </section>
 
           <section>
-            <h2>5년치 시세 추이</h2>
+            <h2>5년치 실거래가 추이</h2>
             {!trendData && (
               <button type="button" className="secondary" onClick={loadTrend} disabled={trendLoading}>
                 {trendLoading ? "불러오는 중... (최대 1분 정도 걸릴 수 있어요)" : "5년 추이 보기"}
@@ -334,6 +344,9 @@ export default function Home() {
             )}
             {trendData && trendData.yearly.length > 0 && (
               <>
+                {trendData.matchMethod === "건물명" && (
+                  <p className="notice">지번이 정확히 안 맞아 건물명으로 매칭했습니다 (참고용)</p>
+                )}
                 <div className="chart">
                   {trendData.yearly.map((y) => {
                     const max = Math.max(...trendData.yearly.map((v) => v.avgPricePerPyeong));
