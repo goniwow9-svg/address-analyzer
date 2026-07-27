@@ -1,6 +1,7 @@
 import { geocodeAddress } from "../../lib/kakao";
 import { getBuildingInfo } from "../../lib/buildinghub";
 import { getRecentTransactions } from "../../lib/realestate";
+import { calculateLocationScore } from "../../lib/locationScore";
 
 export default async function handler(req, res) {
   const address = req.query.address;
@@ -13,8 +14,8 @@ export default async function handler(req, res) {
     // 1단계: 주소 -> 좌표 + 법정동코드 + 지번
     const geo = await geocodeAddress(address.trim());
 
-    // 2단계, 3단계는 서로 의존하지 않으므로 동시에 요청해서 속도를 아낍니다.
-    const [building, realestate] = await Promise.all([
+    // 2단계, 3단계, 입지점수는 서로 의존하지 않으므로 동시에 요청해서 속도를 아낍니다.
+    const [building, realestate, locationScore] = await Promise.all([
       getBuildingInfo({
         sigunguCd: geo.sigunguCd,
         bjdongCd: geo.bjdongCd,
@@ -27,12 +28,18 @@ export default async function handler(req, res) {
         ji: geo.ji,
         months: 6,
       }).catch((err) => ({ error: err.message })),
+      calculateLocationScore({
+        x: geo.longitude,
+        y: geo.latitude,
+        region2: geo.region2,
+      }).catch((err) => ({ error: err.message })),
     ]);
 
     return res.status(200).json({
       geo,
       building,
       realestate,
+      locationScore,
     });
   } catch (err) {
     return res.status(500).json({ error: err.message || "알 수 없는 오류가 발생했습니다." });
