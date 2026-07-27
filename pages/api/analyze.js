@@ -31,6 +31,7 @@ export default async function handler(req, res) {
       calculateLocationScore({
         x: geo.longitude,
         y: geo.latitude,
+        region1: geo.region1,
         region2: geo.region2,
       }).catch((err) => ({ error: err.message })),
     ]);
