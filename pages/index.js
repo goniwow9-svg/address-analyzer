@@ -290,8 +290,15 @@ export default function Home() {
             )}
             {!result.realestate.error && result.realestate.matchedCount === 0 && (
               <div className="notice">
-                해당 기간 동안 이 지번과 일치하는 아파트 거래 내역이 없습니다. (단독/연립/토지는
+                해당 기간 동안 이 지번/건물명과 일치하는 아파트 거래 내역이 없습니다. (단독/연립/토지는
                 Phase 2에서 지원 예정입니다)
+                {result.realestate.sampleAptNames && result.realestate.sampleAptNames.length > 0 && (
+                  <>
+                    <br />
+                    참고 — 이 지역(같은 시군구) 최근 거래에 등록된 단지명들:{" "}
+                    {result.realestate.sampleAptNames.join(", ")}
+                  </>
+                )}
               </div>
             )}
             {!result.realestate.error && result.realestate.matchedCount > 0 && (
@@ -340,7 +347,16 @@ export default function Home() {
             )}
             {trendError && <div className="notice">추이 조회 실패: {trendError}</div>}
             {trendData && trendData.yearly.length === 0 && (
-              <div className="notice">최근 5년간 이 지번과 일치하는 아파트 거래가 없습니다.</div>
+              <div className="notice">
+                최근 5년간 이 지번/건물명과 일치하는 아파트 거래가 없습니다.
+                {trendData.sampleAptNames && trendData.sampleAptNames.length > 0 && (
+                  <>
+                    <br />
+                    참고 — 이 지역(같은 시군구) 최근 거래에 등록된 단지명들:{" "}
+                    {trendData.sampleAptNames.join(", ")}
+                  </>
+                )}
+              </div>
             )}
             {trendData && trendData.yearly.length > 0 && (
               <>
