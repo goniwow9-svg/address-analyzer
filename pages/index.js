@@ -36,42 +36,22 @@ export default function Home() {
   const [landUseError, setLandUseError] = useState(null);
   const [landUseData, setLandUseData] = useState(null);
 
-  // 용도지역·지구(VWorld)는 서버(Vercel)에서 차단당하는 것이 확인되어,
-  // 방문자 브라우저가 직접 VWorld에 물어보도록 클라이언트에서 호출합니다.
-  useEffect(() => {
+  async function loadLandUse() {
     if (!result?.geo?.pnu) return;
-
     setLandUseLoading(true);
     setLandUseError(null);
     setLandUseData(null);
-
-    const params = new URLSearchParams({
-      key: process.env.NEXT_PUBLIC_VWORLD_KEY,
-      pnu: result.geo.pnu,
-      format: "json",
-    });
-    if (process.env.NEXT_PUBLIC_VWORLD_DOMAIN) {
-      params.set("domain", process.env.NEXT_PUBLIC_VWORLD_DOMAIN);
+    try {
+      const res = await fetch(`/api/landuseEdge?pnu=${encodeURIComponent(result.geo.pnu)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "조회 중 오류가 발생했습니다.");
+      setLandUseData(data);
+    } catch (err) {
+      setLandUseError(err.message);
+    } finally {
+      setLandUseLoading(false);
     }
-
-    fetch(`https://api.vworld.kr/ned/data/getLandUseAttr?${params.toString()}`)
-      .then((res) => res.text())
-      .then((text) => {
-        const json = JSON.parse(text);
-        const field = json?.landUses?.field;
-        const items = !field ? [] : Array.isArray(field) ? field : [field];
-        setLandUseData(
-          items.map((item) => ({
-            name: item.prposAreaDstrcCodeNm,
-            isConflict: item.cnflcAtNm === "저촉",
-          }))
-        );
-      })
-      .catch((err) => {
-        setLandUseError(err.message || "용도지역·지구 정보를 불러오지 못했습니다.");
-      })
-      .finally(() => setLandUseLoading(false));
-  }, [result?.geo?.pnu]);
+  }
 
   async function performSearch(rawAddress) {
     const target = rawAddress.trim();
@@ -265,13 +245,25 @@ export default function Home() {
 
           <section>
             <h2>용도지역·지구 (도시계획 정보)</h2>
-            {landUseLoading && <div className="notice">불러오는 중...</div>}
-            {landUseError && <div className="notice">토지이용계획 조회 실패: {landUseError}</div>}
+            <button type="button" className="secondary" onClick={loadLandUse} disabled={landUseLoading}>
+              {landUseLoading ? "불러오는 중..." : "용도지역·지구 조회"}
+            </button>
+            {landUseError && (
+              <div className="notice" style={{ marginTop: "8px" }}>
+                토지이용계획 조회 실패: {landUseError}
+                <br />
+                정확한 정보는{" "}
+                <a href="https://www.eum.go.kr" target="_blank" rel="noreferrer">
+                  토지이음(eum.go.kr)
+                </a>
+                에서 직접 확인해주세요.
+              </div>
+            )}
             {landUseData && landUseData.length === 0 && (
-              <div className="notice">조회된 용도지역·지구 정보가 없습니다.</div>
+              <div className="notice" style={{ marginTop: "8px" }}>조회된 용도지역·지구 정보가 없습니다.</div>
             )}
             {landUseData && landUseData.length > 0 && (
-              <table>
+              <table style={{ marginTop: "8px" }}>
                 <tbody>
                   {landUseData.map((item, i) => (
                     <tr key={i}>
