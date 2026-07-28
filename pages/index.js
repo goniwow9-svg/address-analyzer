@@ -224,6 +224,30 @@ export default function Home() {
           </section>
 
           <section>
+            <h2>용도지역·지구 (도시계획 정보)</h2>
+            {result.landUse && result.landUse.error && (
+              <div className="notice">토지이용계획 조회 실패: {result.landUse.error}</div>
+            )}
+            {result.landUse && !result.landUse.error && result.landUse.length === 0 && (
+              <div className="notice">조회된 용도지역·지구 정보가 없습니다.</div>
+            )}
+            {result.landUse && !result.landUse.error && result.landUse.length > 0 && (
+              <table>
+                <tbody>
+                  {result.landUse.map((item, i) => (
+                    <tr key={i}>
+                      <td>{item.name}</td>
+                      <td style={{ color: item.isConflict ? "#b3261e" : "#555", fontWeight: item.isConflict ? 600 : 400 }}>
+                        {item.isConflict ? "⚠ 저촉 (계획시설이 이 땅을 지나감)" : "포함"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
+
+          <section>
             <h2>입지점수</h2>
             {result.locationScore && result.locationScore.error && (
               <div className="notice">입지점수 계산 실패: {result.locationScore.error}</div>
