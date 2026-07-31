@@ -36,23 +36,6 @@ export default function Home() {
   const [landUseError, setLandUseError] = useState(null);
   const [landUseData, setLandUseData] = useState(null);
 
-  async function loadLandUse() {
-    if (!result?.geo?.pnu) return;
-    setLandUseLoading(true);
-    setLandUseError(null);
-    setLandUseData(null);
-    try {
-      const res = await fetch(`/api/landuseEdge?pnu=${encodeURIComponent(result.geo.pnu)}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "조회 중 오류가 발생했습니다.");
-      setLandUseData(data);
-    } catch (err) {
-      setLandUseError(err.message);
-    } finally {
-      setLandUseLoading(false);
-    }
-  }
-
   async function performSearch(rawAddress) {
     const target = rawAddress.trim();
     if (!target) return;
@@ -245,27 +228,16 @@ export default function Home() {
 
           <section>
             <h2>용도지역·지구 (도시계획 정보)</h2>
-            <button type="button" className="secondary" onClick={loadLandUse} disabled={landUseLoading}>
-              {landUseLoading ? "불러오는 중..." : "용도지역·지구 조회"}
-            </button>
-            {landUseError && (
-              <div className="notice" style={{ marginTop: "8px" }}>
-                토지이용계획 조회 실패: {landUseError}
-                <br />
-                정확한 정보는{" "}
-                <a href="https://www.eum.go.kr" target="_blank" rel="noreferrer">
-                  토지이음(eum.go.kr)
-                </a>
-                에서 직접 확인해주세요.
-              </div>
+            {result.landUse && result.landUse.error && (
+              <div className="notice">토지이용계획 조회 실패: {result.landUse.error}</div>
             )}
-            {landUseData && landUseData.length === 0 && (
-              <div className="notice" style={{ marginTop: "8px" }}>조회된 용도지역·지구 정보가 없습니다.</div>
+            {result.landUse && !result.landUse.error && result.landUse.length === 0 && (
+              <div className="notice">조회된 용도지역·지구 정보가 없습니다.</div>
             )}
-            {landUseData && landUseData.length > 0 && (
-              <table style={{ marginTop: "8px" }}>
+            {result.landUse && !result.landUse.error && result.landUse.length > 0 && (
+              <table>
                 <tbody>
-                  {landUseData.map((item, i) => (
+                  {result.landUse.map((item, i) => (
                     <tr key={i}>
                       <td>{item.name}</td>
                       <td style={{ color: item.isConflict ? "#b3261e" : "#555", fontWeight: item.isConflict ? 600 : 400 }}>
