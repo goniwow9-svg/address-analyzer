@@ -2,6 +2,7 @@ import { geocodeAddress } from "../../lib/kakao";
 import { getBuildingInfo } from "../../lib/buildinghub";
 import { getRecentTransactions } from "../../lib/realestate";
 import { calculateLocationScore } from "../../lib/locationScore";
+import { getLandUseInfo } from "../../lib/landuseDb";
 
 export default async function handler(req, res) {
   const address = req.query.address;
@@ -24,10 +25,9 @@ export default async function handler(req, res) {
 
     const buildingName = building && !building.error && !building.notFound ? building.buildingName : null;
 
-    // 2단계, 입지점수는 서로 의존하지 않으므로 동시에 요청해서 속도를 아낍니다.
-    // 용도지역·지구(토지이용계획)는 VWorld가 클라우드 서버 IP를 차단하는 것으로 확인되어
-    // 서버가 아니라 방문자 브라우저가 직접 호출하도록 클라이언트 쪽으로 옮겼습니다.
-    const [realestate, locationScore] = await Promise.all([
+    // 2단계, 입지점수, 용도지역·지구는 서로 의존하지 않으므로 동시에 요청해서 속도를 아낍니다.
+    // 용도지역·지구는 이제 VWorld가 아니라 우리가 직접 채운 DB(Neon)에서 조회합니다.
+    const [realestate, locationScore, landUse] = await Promise.all([
       getRecentTransactions({
         sigunguCd: geo.sigunguCd,
         bun: geo.bun,
@@ -41,6 +41,7 @@ export default async function handler(req, res) {
         region1: geo.region1,
         region2: geo.region2,
       }).catch((err) => ({ error: err.message })),
+      getLandUseInfo({ pnu: geo.pnu }).catch((err) => ({ error: err.message })),
     ]);
 
     return res.status(200).json({
@@ -48,6 +49,7 @@ export default async function handler(req, res) {
       building,
       realestate,
       locationScore,
+      landUse,
     });
   } catch (err) {
     return res.status(500).json({ error: err.message || "알 수 없는 오류가 발생했습니다." });
